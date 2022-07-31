@@ -1,3 +1,13 @@
+const mapData = {
+    minX: 0,
+    maxX: 15,
+    minY: 0,
+    maxY: 13,
+    blockedSpaces: {
+        "7x4": false,
+        "7x5": false
+    }
+}
 const names = [];
 
 function createName() {
@@ -10,6 +20,18 @@ function createName() {
     else{
         createName();
     }
+}
+
+function getKeyString(x, y){
+    return `${x}x${y}`;
+}
+
+function isSolid(x, y){
+    const blockedNextSpace = mapData.blockedSpaces[getKeyString(x, y)]
+
+    return(
+        blockedNextSpace || x >= mapData.maxX || x < mapData.minX || y >= mapData.maxY || y < mapData.minY
+    )
 }
 
 (function(){
@@ -25,7 +47,7 @@ function createName() {
         const newX = players[playerId].x + xChange;
         const newY = players[playerId].y + yChange;
 
-        if(true){
+        if(!isSolid(newX, newY)){
             // move to next space
             players[playerId].x = newX;
             players[playerId].y = newY;
@@ -61,7 +83,7 @@ function createName() {
                 element.setAttribute("data-direction", characterState.direction);
 
                 const left = 16 * characterState.x + "px";
-                const top = 16 * characterState.y - 4 + "px";
+                const top = 16 * characterState.y + 3 + "px";
 
                 element.style.transform = `translate3d(${left}, ${top}, 0)`;
             });
@@ -94,9 +116,9 @@ function createName() {
         })
 
         allPlayersRef.on("child_removed", (snapshot) => {
-            const removedKey = snapshot.val().id;
-            gameContainer.removeChild(playerElements[removedKey]);
-            delete playerElements[removedKey];
+            const removedName = snapshot.val().name;
+            gameContainer.removeChild(playerElements[removedName]);
+            delete playerElements[removedName];
         })
     }
 
