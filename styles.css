@@ -60,3 +60,11 @@ html, body {
     top: -3px;
     background: red;
 }
+
+/* Bullets */
+
+.Bullet_sprite {
+    overflow: hidden;
+    top: -3px;
+    background: blue;
+}

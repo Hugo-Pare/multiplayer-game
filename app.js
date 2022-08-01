@@ -54,7 +54,7 @@ function spawnNewEnemy(){
     enemyRef.set({x, y});
 }
 
-(function(){
+(function(){ 
 
     let playerId;
     let playerRef;
@@ -63,6 +63,9 @@ function spawnNewEnemy(){
 
     let enemies = {};
     let enemyElements = {};
+
+    let bullets = {};
+    let bulletElements = {};
 
     const gameContainer = document.querySelector(".game-container");
 
@@ -89,15 +92,122 @@ function spawnNewEnemy(){
             playerRef.set(players[playerId]);
         }
     }
+
+    function handleFire(){
+        // wait until player's bullet exploded
+        if(players[playerId].bullet === ""){
+            const playerX = players[playerId].x;
+            const playerY = players[playerId].y;
+            const playerCoords = getKeyString(playerX, playerY); // example : returns "3x3"
+            const playerDirection = players[playerId].direction;
+
+            bulletRef = firebase.database().ref(`bullets/${playerId}`);
+
+            switch(playerDirection){
+                case "up":
+                    var bulletCoords = getKeyString(playerX, playerY - 1);
+                    console.log("shoot up - playerCoords : " + playerCoords + " - bulletCoords : " + bulletCoords);
+                    players[playerId].bullet = bulletCoords;
+                    players[playerId].bulletDirection = "up";
+                    bulletRef.set({
+                        name: playerId,
+                        direction: "up",
+                        x: playerX,
+                        y: playerY - 1
+                    });
+                    break;
+
+                case "down":
+                    var bulletCoords = getKeyString(playerX, playerY + 1);
+                    console.log("shoot down - playerCoords : " + playerCoords + " - bulletCoords : " + bulletCoords);
+                    players[playerId].bullet = bulletCoords;
+                    players[playerId].bulletDirection = "down";
+                    bulletRef.set({
+                        name: playerId,
+                        direction: "down",
+                        x: playerX,
+                        y: playerY + 1
+                    });
+                    break;
+
+                case "left":
+                    var bulletCoords = getKeyString(playerX - 1, playerY);
+                    console.log("shoot left - playerCoords : " + playerCoords + " - bulletCoords : " + bulletCoords);
+                    players[playerId].bullet = bulletCoords;
+                    players[playerId].bulletDirection = "left";
+                    bulletRef.set({
+                        name: playerId,
+                        direction: "left",
+                        x: playerX - 1,
+                        y: playerY
+                    });
+                    break;
+
+                case "right":
+                    var bulletCoords = getKeyString(playerX + 1, playerY);
+                    console.log("shoot right - playerCoords : " + playerCoords + " - bulletCoords : " + bulletCoords);
+                    players[playerId].bullet = bulletCoords;
+                    players[playerId].bulletDirection = "right";
+                    bulletRef.set({
+                        name: playerId,
+                        direction: "right",
+                        x: playerX + 1,
+                        y: playerY
+                    });
+                    break;
+            }
+            playerRef.set(players[playerId]);
+        }
+    }
  
     function initGame(){
         new KeyPressListener("ArrowUp", () => handleArrowPress(0,-1));
         new KeyPressListener("ArrowDown", () => handleArrowPress(0,1));
         new KeyPressListener("ArrowLeft", () => handleArrowPress(-1,0));
         new KeyPressListener("ArrowRight", () => handleArrowPress(1,0));
+        // fire a bullet
+        new KeyPressListener("Space", () => handleFire());
 
         const allPlayersRef = firebase.database().ref(`players`);
         const allEnemiesRef = firebase.database().ref(`enemies`);
+        const allBulletsRef = firebase.database().ref(`bullets`);
+
+        allBulletsRef.on("value", (snapshot) => {
+            // fires whenever a change occures
+            bullets = snapshot.val() || {};
+
+            Object.keys(bullets).forEach((key) => {
+                const bulletState = bullets[key];
+                let element = bulletElements[bulletState.name];
+                console.log(element);
+
+                const left = 8 * bulletState.x + "px";
+                const top = 8 * bulletState.y + 3 + "px";
+
+                element.style.transform = `translate3d(${left}, ${top}, 0)`;
+            });
+        })
+
+        allBulletsRef.on("child_added", (snapshot) =>{
+            // fires whenever a new node is added to the tree (new player)
+            const newBullet = snapshot.val();
+            const bulletElement = document.createElement("div");
+            bulletElement.classList.add("Bullet", "grid-cell");
+
+            bulletElement.innerHTML = (`<div class="Bullet_sprite grid-cell"></div>`);
+            bulletElements[newBullet.name] = bulletElement;
+
+            const left = 8 * newBullet.x + "px";
+            const top = 8 * newBullet.y + 3 + "px";
+            bulletElement.style.transform = `translate3d(${left}, ${top}, 0)`;
+            gameContainer.appendChild(bulletElement);
+        })
+
+        // allBulletsRef.on("child_removed", (snapshot) => {
+        //     const removedBullet = snapshot.val().name;
+        //     gameContainer.removeChild(bulletElements[removedBullet]);
+        //     delete bulletElements[removedBullet];
+        // })
 
         allPlayersRef.on("value", (snapshot) => {
             // fires whenever a change occures
@@ -105,7 +215,6 @@ function spawnNewEnemy(){
 
             Object.keys(players).forEach((key) => {
                 const characterState = players[key];
-                // issue here, should be : playerElements[key];
                 let element = playerElements[characterState.name];
 
                 // update DOM
@@ -113,7 +222,7 @@ function spawnNewEnemy(){
                 element.setAttribute("data-direction", characterState.direction);
 
                 const left = 8 * characterState.x + "px";
-                const top = 8 * characterState.y - 4 + "px";
+                const top = 8 * characterState.y + 3 + "px";
 
                 element.style.transform = `translate3d(${left}, ${top}, 0)`;
             });
@@ -132,7 +241,6 @@ function spawnNewEnemy(){
                 </div>
                 <div class="Character_you-arrow></div>
             `);
-            //playerElements[addedPlayer.id] = characterElement;
             playerElements[addedPlayer.name] = characterElement;
 
             // fill initial state
@@ -140,7 +248,7 @@ function spawnNewEnemy(){
             characterElement.setAttribute("data-direction", addedPlayer.direction);
 
             const left = 8 * addedPlayer.x + "px";
-            const top = 8 * addedPlayer.y - 4 + "px";
+            const top = 8 * addedPlayer.y + 3 + "px";
             characterElement.style.transform = `translate3d(${left}, ${top}, 0)`;
             gameContainer.appendChild(characterElement);
         })
@@ -172,7 +280,7 @@ function spawnNewEnemy(){
             enemyElement.innerHTML = `<div class="Enemy_sprite grid-cell"></div>`;
 
             const left = 8 * enemy.x + "px";
-            const top = 8 * enemy.y - 4 + "px";
+            const top = 8 * enemy.y + 3 + "px";
             enemyElement.style.transform = `translate3d(${left}, ${top}, 0)`;
 
             enemyElements[key] = enemyElement;
@@ -184,18 +292,6 @@ function spawnNewEnemy(){
             const key = getKeyString(x, y);
             gameContainer.removeChild(enemyElements[key]);
             delete enemyElements[key];
-        })
-
-        allEnemiesRef.on("value", (snapshot) => {
-            // fires whenever a change occures
-            enemies = snapshot.val() || {};
-
-            Object.keys(enemies).forEach((key) => {
-                let enemyState = enemyElements[key];
-
-                const left = 8 * enemyState.x + "px";
-                const top = 8 * enemyState.y + 3 + "px";
-            });
         })
 
         spawnNewEnemy();
@@ -216,11 +312,12 @@ function spawnNewEnemy(){
                 direction: "right",
                 score: 0,
                 x,
-                y
+                y,
+                bullet: "",
+                bulletDirection: ""
             })
 
             playerRef.onDisconnect().remove();
-
             initGame();
         }
         else{
