@@ -1,13 +1,16 @@
 const mapData = {
     minX: 0,
-    maxX: 15,
+    maxX: 30,
     minY: 0,
-    maxY: 13,
+    maxY: 26,
+    // connect enemyCoords to database
     blockedSpaces: {
         "7x4": false,
         "7x5": false
-    }
+    },
+    enemyCoords: {}
 }
+
 const names = [];
 
 function createName() {
@@ -22,16 +25,33 @@ function createName() {
     }
 }
 
+function getPlayerSpawn(){
+    const arrayCoords = [{x:3, y:2},{x:5, y:2},{x:7, y:2},{x:9, y:2},{x:11, y:2},{x:13, y:2},{x:15, y:2},{x:17, y:2},{x:19, y:2},,{x:21, y:2}];
+    return arrayCoords[Math.floor(Math.random() * 10)];
+}
+
+function getEnemySpawn(){
+    const arrayCoords = [{x:3, y:20},{x:5, y:20},{x:7, y:20},{x:9, y:20},{x:11, y:20},{x:13, y:20},{x:15, y:20},{x:17, y:20},{x:19, y:20},{x:21, y:20}];
+    return arrayCoords[Math.floor(Math.random() * 10)];
+}
+
 function getKeyString(x, y){
     return `${x}x${y}`;
 }
 
 function isSolid(x, y){
-    const blockedNextSpace = mapData.blockedSpaces[getKeyString(x, y)]
+    const blockedNextSpace = mapData.blockedSpaces[getKeyString(x, y)];
+    const blockedNextSpaceEnemy = mapData.enemyCoords[getKeyString(x, y)];
 
     return(
-        blockedNextSpace || x >= mapData.maxX || x < mapData.minX || y >= mapData.maxY || y < mapData.minY
+        blockedNextSpace || blockedNextSpaceEnemy || x >= mapData.maxX || x < mapData.minX || y >= mapData.maxY || y < mapData.minY
     )
+}
+
+function spawnNewEnemy(){
+    const { x, y } = getEnemySpawn();
+    enemyRef = firebase.database().ref(`enemies/${getKeyString(x, y)}`);
+    enemyRef.set({x, y});
 }
 
 (function(){
@@ -40,6 +60,9 @@ function isSolid(x, y){
     let playerRef;
     let playerElements = {};
     let players = {};
+
+    let enemies = {};
+    let enemyElements = {};
 
     const gameContainer = document.querySelector(".game-container");
 
@@ -57,6 +80,12 @@ function isSolid(x, y){
             if(xChange === -1){
                 players[playerId].direction = "left";
             }
+            if(yChange === 1){
+                players[playerId].direction = "down";
+            }
+            if(yChange === -1){
+                players[playerId].direction = "up";
+            }
             playerRef.set(players[playerId]);
         }
     }
@@ -68,6 +97,7 @@ function isSolid(x, y){
         new KeyPressListener("ArrowRight", () => handleArrowPress(1,0));
 
         const allPlayersRef = firebase.database().ref(`players`);
+        const allEnemiesRef = firebase.database().ref(`enemies`);
 
         allPlayersRef.on("value", (snapshot) => {
             // fires whenever a change occures
@@ -82,8 +112,8 @@ function isSolid(x, y){
                 element.querySelector(".Character_name").innerText = characterState.name;
                 element.setAttribute("data-direction", characterState.direction);
 
-                const left = 16 * characterState.x + "px";
-                const top = 16 * characterState.y + 3 + "px";
+                const left = 8 * characterState.x + "px";
+                const top = 8 * characterState.y - 4 + "px";
 
                 element.style.transform = `translate3d(${left}, ${top}, 0)`;
             });
@@ -109,8 +139,8 @@ function isSolid(x, y){
             characterElement.querySelector(".Character_name").innerText = addedPlayer.name;
             characterElement.setAttribute("data-direction", addedPlayer.direction);
 
-            const left = 16 * addedPlayer.x + "px";
-            const top = 16 * addedPlayer.y - 4 + "px";
+            const left = 8 * addedPlayer.x + "px";
+            const top = 8 * addedPlayer.y - 4 + "px";
             characterElement.style.transform = `translate3d(${left}, ${top}, 0)`;
             gameContainer.appendChild(characterElement);
         })
@@ -120,6 +150,55 @@ function isSolid(x, y){
             gameContainer.removeChild(playerElements[removedName]);
             delete playerElements[removedName];
         })
+
+        allEnemiesRef.on("value", (snapshot) => {
+            enemies = snapshot.val() || {};
+            var enemyArray = Object.keys(enemies);
+            var updatedEnemyCoords = [];
+
+            for(let i = 0; i < enemyArray.length; i++){
+                updatedEnemyCoords.push([enemyArray[i], true])
+            }
+
+            var updatedEnemyCoordsObj = Object.fromEntries(updatedEnemyCoords);
+            mapData.enemyCoords = updatedEnemyCoordsObj;
+        });
+
+        allEnemiesRef.on("child_added", (snapshot) => {
+            const enemy = snapshot.val();
+            const key = getKeyString(enemy.x, enemy.y);
+            const enemyElement = document.createElement("div");
+            enemyElement.classList.add("Enemy", "grid-cell");
+            enemyElement.innerHTML = `<div class="Enemy_sprite grid-cell"></div>`;
+
+            const left = 8 * enemy.x + "px";
+            const top = 8 * enemy.y - 4 + "px";
+            enemyElement.style.transform = `translate3d(${left}, ${top}, 0)`;
+
+            enemyElements[key] = enemyElement;
+            gameContainer.appendChild(enemyElement);
+        })
+
+        allEnemiesRef.on("child_removed", (snapshot) => {
+            const {x, y} = snapshot.val();
+            const key = getKeyString(x, y);
+            gameContainer.removeChild(enemyElements[key]);
+            delete enemyElements[key];
+        })
+
+        allEnemiesRef.on("value", (snapshot) => {
+            // fires whenever a change occures
+            enemies = snapshot.val() || {};
+
+            Object.keys(enemies).forEach((key) => {
+                let enemyState = enemyElements[key];
+
+                const left = 8 * enemyState.x + "px";
+                const top = 8 * enemyState.y + 3 + "px";
+            });
+        })
+
+        spawnNewEnemy();
     }
 
     firebase.auth().onAuthStateChanged((user) => {
@@ -130,13 +209,14 @@ function isSolid(x, y){
             playerRef = firebase.database().ref(`players/${playerId}`);
             
             const name = createName();
+            const {x, y} = getPlayerSpawn();
 
             playerRef.set({
                 name,
                 direction: "right",
                 score: 0,
-                x: 3,
-                y: 3
+                x,
+                y
             })
 
             playerRef.onDisconnect().remove();

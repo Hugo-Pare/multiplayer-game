@@ -18,37 +18,19 @@ html, body {
     width: 240px;
     height: 208px;
     background: white;
-    transform: scale(3); 
+    transform: scale(4); 
 }
 
 /* Characters */
 
 .grid-cell {
     position: absolute;
-    width: 16px;
-    height: 16px;
+    width: 8px;
+    height: 8px;
 }
 
 .Character{
     transition: transform 0.4s;
-}
-
-.Character.you{
-    z-index: 1;
-}
-
-.Character.you .Character_you-arrow{
-    display: block;
-}
-
-.Character_you-arrow{
-    display: none;
-    position: absolute;
-    top: -18px;
-    left: 5px;
-    width: 7px;
-    height: 5px;
-    background: red no-repeat no-repeat;
 }
 
 .Character_sprite{
@@ -59,9 +41,9 @@ html, body {
 
 .Character_name-container{
     position: absolute;
-    top: -12px;
-    left: -8px;
-    font-size: 5px;
+    top: -10px;
+    left: -9px;
+    font-size: 4px;
     padding: 1px 2px 1px;
     border-radius: 3px;
     background: #333;
@@ -69,4 +51,12 @@ html, body {
     font-weight: bold;
     text-transform: uppercase;
     white-space: nowrap;
+}
+
+/* Enemies */
+
+.Enemy_sprite {
+    overflow: hidden;
+    top: -3px;
+    background: red;
 }
