@@ -8,7 +8,8 @@ const mapData = {
         "7x4": false,
         "7x5": false
     },
-    enemyCoords: {}
+    enemyCoords: {},
+    bulletTimeoutSpeed: 200
 }
 
 const names = [];
@@ -159,6 +160,70 @@ function spawnNewEnemy(){
             playerRef.set(players[playerId]);
         }
     }
+
+    function moveBullet(bullets, key){
+        const bullet = bullets[key];
+        const x = bullet.x;
+        const y = bullet.y;
+        const direction = bullet.direction;
+
+        console.log("move bullet (" + bullet.x + "," + bullet.y + ") to the " + bullet.direction);
+        bulletRef = firebase.database().ref(`bullets/${key}`);
+        playerRef = firebase.database().ref(`players/${key}`);
+
+        var newX;
+        var newY;
+
+        switch(direction){
+            case "up":
+                newX = x;
+                newY = y - 1;
+                break;
+            case "down":
+                newX = x;
+                newY = y + 1;
+                break;
+            case "left":
+                newX = x - 1;
+                newY = y;
+                break;
+            case "right":
+                newX = x + 1;
+                newY = y;
+                break;
+        }
+
+        if(!isSolid(newX, newY)){
+            // change bullet coords in 'players' database
+            playerRef.set({
+                bullet: getKeyString(newX, newY),
+                bulletDirection: direction,
+                direction: players[playerId].direction,
+                name: players[playerId].name,
+                x: players[playerId].x,
+                y: players[playerId].y,
+            });
+            // change bullet coords in 'bullets' database
+            bulletRef.set({
+                x: newX,
+                y: newY,
+                name: bullet.name,
+                direction: bullet.direction
+            });
+        }
+        else{
+            // destroy bullet or kill enemy
+            playerRef.set({
+                bullet: "",
+                bulletDirection: "",
+                direction: players[playerId].direction,
+                name: players[playerId].name,
+                x: players[playerId].x,
+                y: players[playerId].y,
+            });
+            bulletRef.remove();
+        }
+    }
  
     function initGame(){
         new KeyPressListener("ArrowUp", () => handleArrowPress(0,-1));
@@ -179,12 +244,12 @@ function spawnNewEnemy(){
             Object.keys(bullets).forEach((key) => {
                 const bulletState = bullets[key];
                 let element = bulletElements[bulletState.name];
-                console.log(element);
 
                 const left = 8 * bulletState.x + "px";
                 const top = 8 * bulletState.y + 3 + "px";
-
                 element.style.transform = `translate3d(${left}, ${top}, 0)`;
+                setTimeout(() => moveBullet(bullets, key), mapData.bulletTimeoutSpeed);
+                //setInterval(moveBullet, mapData.bulletTimeoutSpeed, bullets, key);
             });
         })
 
@@ -203,11 +268,11 @@ function spawnNewEnemy(){
             gameContainer.appendChild(bulletElement);
         })
 
-        // allBulletsRef.on("child_removed", (snapshot) => {
-        //     const removedBullet = snapshot.val().name;
-        //     gameContainer.removeChild(bulletElements[removedBullet]);
-        //     delete bulletElements[removedBullet];
-        // })
+        allBulletsRef.on("child_removed", (snapshot) => {
+            const removedBullet = snapshot.val().name;
+            gameContainer.removeChild(bulletElements[removedBullet]);
+            delete bulletElements[removedBullet];
+        })
 
         allPlayersRef.on("value", (snapshot) => {
             // fires whenever a change occures
@@ -223,7 +288,6 @@ function spawnNewEnemy(){
 
                 const left = 8 * characterState.x + "px";
                 const top = 8 * characterState.y + 3 + "px";
-
                 element.style.transform = `translate3d(${left}, ${top}, 0)`;
             });
         })
@@ -310,7 +374,6 @@ function spawnNewEnemy(){
             playerRef.set({
                 name,
                 direction: "right",
-                score: 0,
                 x,
                 y,
                 bullet: "",
