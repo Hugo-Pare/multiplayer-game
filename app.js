@@ -9,7 +9,7 @@ const mapData = {
         "7x5": false
     },
     enemyCoords: {},
-    bulletTimeoutSpeed: 200
+    bulletTimeoutSpeed: 150
 }
 
 const names = [];
@@ -167,7 +167,7 @@ function spawnNewEnemy(){
         const y = bullet.y;
         const direction = bullet.direction;
 
-        console.log("move bullet (" + bullet.x + "," + bullet.y + ") to the " + bullet.direction);
+        //console.log("move bullet (" + bullet.x + "," + bullet.y + ") to the " + bullet.direction);
         bulletRef = firebase.database().ref(`bullets/${key}`);
         playerRef = firebase.database().ref(`players/${key}`);
 
@@ -212,7 +212,7 @@ function spawnNewEnemy(){
             });
         }
         else{
-            // destroy bullet or kill enemy
+            // destroy bullet
             playerRef.set({
                 bullet: "",
                 bulletDirection: "",
@@ -221,6 +221,20 @@ function spawnNewEnemy(){
                 x: players[playerId].x,
                 y: players[playerId].y,
             });
+
+            // check if bullet hits an enemy
+            const allEnemiesRef = firebase.database().ref(`enemies`);
+            allEnemiesRef.on("value", (snapshot) => {
+                snapshot.forEach((childSnapshot) => {
+                    var childSnapshotVal = childSnapshot.val();
+                    // if enemy coords = bullet coords -> remove enemy
+                    if(childSnapshotVal.x === newX && childSnapshotVal.y === newY){
+                        const enemyRef = firebase.database().ref(`enemies/${getKeyString(childSnapshotVal.x, childSnapshotVal.y)}`);
+                        enemyRef.remove();
+                    }
+                })
+            });
+
             bulletRef.remove();
         }
     }
@@ -358,6 +372,7 @@ function spawnNewEnemy(){
             delete enemyElements[key];
         })
 
+        spawnNewEnemy();
         spawnNewEnemy();
     }
 
