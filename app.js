@@ -96,7 +96,7 @@ function spawnNewEnemy(){
 
     function handleFire(){
         // wait until player's bullet exploded
-        if(players[playerId].bullet === ""){
+        if(players[playerId].shot === false){
             const playerX = players[playerId].x;
             const playerY = players[playerId].y;
             const playerCoords = getKeyString(playerX, playerY); // example : returns "3x3"
@@ -108,8 +108,6 @@ function spawnNewEnemy(){
                 case "up":
                     var bulletCoords = getKeyString(playerX, playerY - 1);
                     console.log("shoot up - playerCoords : " + playerCoords + " - bulletCoords : " + bulletCoords);
-                    players[playerId].bullet = bulletCoords;
-                    players[playerId].bulletDirection = "up";
                     bulletRef.set({
                         name: playerId,
                         direction: "up",
@@ -121,8 +119,6 @@ function spawnNewEnemy(){
                 case "down":
                     var bulletCoords = getKeyString(playerX, playerY + 1);
                     console.log("shoot down - playerCoords : " + playerCoords + " - bulletCoords : " + bulletCoords);
-                    players[playerId].bullet = bulletCoords;
-                    players[playerId].bulletDirection = "down";
                     bulletRef.set({
                         name: playerId,
                         direction: "down",
@@ -134,8 +130,6 @@ function spawnNewEnemy(){
                 case "left":
                     var bulletCoords = getKeyString(playerX - 1, playerY);
                     console.log("shoot left - playerCoords : " + playerCoords + " - bulletCoords : " + bulletCoords);
-                    players[playerId].bullet = bulletCoords;
-                    players[playerId].bulletDirection = "left";
                     bulletRef.set({
                         name: playerId,
                         direction: "left",
@@ -147,8 +141,6 @@ function spawnNewEnemy(){
                 case "right":
                     var bulletCoords = getKeyString(playerX + 1, playerY);
                     console.log("shoot right - playerCoords : " + playerCoords + " - bulletCoords : " + bulletCoords);
-                    players[playerId].bullet = bulletCoords;
-                    players[playerId].bulletDirection = "right";
                     bulletRef.set({
                         name: playerId,
                         direction: "right",
@@ -157,9 +149,11 @@ function spawnNewEnemy(){
                     });
                     break;
             }
+            players[playerId].shot = true;
             playerRef.set(players[playerId]);
         }
     }
+    
 
     function moveBullet(bullets, key){
         const bullet = bullets[key];
@@ -167,9 +161,8 @@ function spawnNewEnemy(){
         const y = bullet.y;
         const direction = bullet.direction;
 
-        //console.log("move bullet (" + bullet.x + "," + bullet.y + ") to the " + bullet.direction);
+        console.log("move bullet (" + bullet.x + "," + bullet.y + ") to the " + bullet.direction);
         bulletRef = firebase.database().ref(`bullets/${key}`);
-        playerRef = firebase.database().ref(`players/${key}`);
 
         var newX;
         var newY;
@@ -194,15 +187,6 @@ function spawnNewEnemy(){
         }
 
         if(!isSolid(newX, newY)){
-            // change bullet coords in 'players' database
-            playerRef.set({
-                bullet: getKeyString(newX, newY),
-                bulletDirection: direction,
-                direction: players[playerId].direction,
-                name: players[playerId].name,
-                x: players[playerId].x,
-                y: players[playerId].y,
-            });
             // change bullet coords in 'bullets' database
             bulletRef.set({
                 x: newX,
@@ -212,16 +196,6 @@ function spawnNewEnemy(){
             });
         }
         else{
-            // destroy bullet
-            playerRef.set({
-                bullet: "",
-                bulletDirection: "",
-                direction: players[playerId].direction,
-                name: players[playerId].name,
-                x: players[playerId].x,
-                y: players[playerId].y,
-            });
-
             // check if bullet hits an enemy
             const allEnemiesRef = firebase.database().ref(`enemies`);
             allEnemiesRef.on("value", (snapshot) => {
@@ -235,6 +209,11 @@ function spawnNewEnemy(){
                 })
             });
 
+            // change shot to false in 'players' database
+            players[playerId].shot = false;
+            playerRef.set(players[playerId]);
+
+            // destroy bullet
             bulletRef.remove();
         }
     }
@@ -263,7 +242,6 @@ function spawnNewEnemy(){
                 const top = 8 * bulletState.y + 3 + "px";
                 element.style.transform = `translate3d(${left}, ${top}, 0)`;
                 setTimeout(() => moveBullet(bullets, key), mapData.bulletTimeoutSpeed);
-                //setInterval(moveBullet, mapData.bulletTimeoutSpeed, bullets, key);
             });
         })
 
@@ -391,8 +369,7 @@ function spawnNewEnemy(){
                 direction: "right",
                 x,
                 y,
-                bullet: "",
-                bulletDirection: ""
+                shot: false
             })
 
             playerRef.onDisconnect().remove();
