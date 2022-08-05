@@ -17,7 +17,6 @@ html, body {
     position: relative;
     width: 240px;
     height: 208px;
-    background: white;
     transform: scale(4); 
 }
 
@@ -36,7 +35,7 @@ html, body {
 .Character_sprite{
     overflow: hidden;
     top: -3px;
-    background: green;
+    background: #00ff00;
 }
 
 .Character_name-container{
@@ -67,4 +66,18 @@ html, body {
     overflow: hidden;
     top: -3px;
     background: blue;
+}
+
+/* Tiles */
+.Grass_sprite{
+    overflow: hidden;
+    background: url('./sprites/grass.png');
+    height: 208px;
+    width: 240px;
+}
+
+.Wall_sprite{
+    overflow: hidden;
+    background: url('./sprites/wall.png') no-repeat;
+    background-size: contain;
 }

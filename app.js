@@ -1,13 +1,15 @@
+
 const mapData = {
     minX: 0,
     maxX: 30,
     minY: 0,
     maxY: 26,
-    // connect enemyCoords to database
     blockedSpaces: {
-        "7x4": false,
-        "7x5": false
+        "12x6": true,
+        "12x12": true,
+        "18x12": true,
     },
+    // connect enemyCoords to database
     enemyCoords: {},
     bulletTimeoutSpeed: 150
 }
@@ -229,6 +231,9 @@ function spawnNewEnemy(){
         const allPlayersRef = firebase.database().ref(`players`);
         const allEnemiesRef = firebase.database().ref(`enemies`);
         const allBulletsRef = firebase.database().ref(`bullets`);
+
+        drawGrass();
+        drawWalls();
 
         allBulletsRef.on("value", (snapshot) => {
             // fires whenever a change occures
