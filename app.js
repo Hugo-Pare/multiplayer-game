@@ -1,19 +1,3 @@
-
-const mapData = {
-    minX: 0,
-    maxX: 30,
-    minY: 0,
-    maxY: 26,
-    blockedSpaces: {
-        "12x6": true,
-        "12x12": true,
-        "18x12": true,
-    },
-    // connect enemyCoords to database
-    enemyCoords: {},
-    bulletTimeoutSpeed: 150
-}
-
 const names = [];
 
 function createName() {
@@ -29,7 +13,7 @@ function createName() {
 }
 
 function getPlayerSpawn(){
-    const arrayCoords = [{x:3, y:2},{x:5, y:2},{x:7, y:2},{x:9, y:2},{x:11, y:2},{x:13, y:2},{x:15, y:2},{x:17, y:2},{x:19, y:2},,{x:21, y:2}];
+    const arrayCoords = [{x:1, y:1},{x:1, y:2},{x:1, y:3},{x:2, y:1},{x:2, y:2},{x:2, y:3},{x:3, y:1},{x:3, y:2},{x:3, y:3},,{x:4, y:2}];
     return arrayCoords[Math.floor(Math.random() * 10)];
 }
 

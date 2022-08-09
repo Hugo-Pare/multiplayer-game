@@ -57,7 +57,8 @@ html, body {
 .Enemy_sprite {
     overflow: hidden;
     top: -3px;
-    background: red;
+    background: url('./sprites/blue_tank_up.png') no-repeat;
+    background-size: contain;
 }
 
 /* Bullets */
@@ -65,7 +66,7 @@ html, body {
 .Bullet_sprite {
     overflow: hidden;
     top: -3px;
-    background: blue;
+    background: black;
 }
 
 /* Tiles */
