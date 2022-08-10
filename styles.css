@@ -54,10 +54,31 @@ html, body {
 
 /* Enemies */
 
-.Enemy_sprite {
+.Enemy_sprite_up {
     overflow: hidden;
     top: -3px;
     background: url('./sprites/blue_tank_up.png') no-repeat;
+    background-size: contain;
+}
+
+.Enemy_sprite_down {
+    overflow: hidden;
+    top: -3px;
+    background: url('./sprites/blue_tank_down.png') no-repeat;
+    background-size: contain;
+}
+
+.Enemy_sprite_left {
+    overflow: hidden;
+    top: -3px;
+    background: url('./sprites/blue_tank_left.png') no-repeat;
+    background-size: contain;
+}
+
+.Enemy_sprite_right {
+    overflow: hidden;
+    top: -3px;
+    background: url('./sprites/blue_tank_right.png') no-repeat;
     background-size: contain;
 }
 

@@ -1,3 +1,4 @@
+
 const names = [];
 
 function createName() {
@@ -10,16 +11,6 @@ function createName() {
     else{
         createName();
     }
-}
-
-function getPlayerSpawn(){
-    const arrayCoords = [{x:1, y:1},{x:1, y:2},{x:1, y:3},{x:2, y:1},{x:2, y:2},{x:2, y:3},{x:3, y:1},{x:3, y:2},{x:3, y:3},,{x:4, y:2}];
-    return arrayCoords[Math.floor(Math.random() * 10)];
-}
-
-function getEnemySpawn(){
-    const arrayCoords = [{x:3, y:20},{x:5, y:20},{x:7, y:20},{x:9, y:20},{x:11, y:20},{x:13, y:20},{x:15, y:20},{x:17, y:20},{x:19, y:20},{x:21, y:20}];
-    return arrayCoords[Math.floor(Math.random() * 10)];
 }
 
 function getKeyString(x, y){
@@ -36,9 +27,18 @@ function isSolid(x, y){
 }
 
 function spawnNewEnemy(){
-    const { x, y } = getEnemySpawn();
-    enemyRef = firebase.database().ref(`enemies/${getKeyString(x, y)}`);
-    enemyRef.set({x, y});
+    const enemySpawns = getEnemySpawn();
+    for(let i = 0; i < enemySpawns.length; i++){
+        var x = enemySpawns[i].x;
+        var y = enemySpawns[i].y;
+        var direction = enemySpawns[i].direction;
+        enemyRef = firebase.database().ref(`enemies/${getKeyString(x, y)}`);
+        enemyRef.set({
+            x,
+            y,
+            direction
+        });
+    }
 }
 
 (function(){ 
@@ -322,7 +322,23 @@ function spawnNewEnemy(){
             const key = getKeyString(enemy.x, enemy.y);
             const enemyElement = document.createElement("div");
             enemyElement.classList.add("Enemy", "grid-cell");
-            enemyElement.innerHTML = `<div class="Enemy_sprite grid-cell"></div>`;
+            
+            const direction = enemy.direction;
+            // modify direction of enemy tank
+            switch(direction){
+                case "up":
+                    enemyElement.innerHTML = `<div class="Enemy_sprite_up grid-cell"></div>`;
+                    break;
+                case "down":
+                    enemyElement.innerHTML = `<div class="Enemy_sprite_down grid-cell"></div>`;
+                    break;
+                case "left":
+                    enemyElement.innerHTML = `<div class="Enemy_sprite_left grid-cell"></div>`;
+                    break;
+                case "right":
+                    enemyElement.innerHTML = `<div class="Enemy_sprite_right grid-cell"></div>`;
+                    break;
+            }
 
             const left = 8 * enemy.x + "px";
             const top = 8 * enemy.y + 3 + "px";
@@ -339,7 +355,6 @@ function spawnNewEnemy(){
             delete enemyElements[key];
         })
 
-        spawnNewEnemy();
         spawnNewEnemy();
     }
 
