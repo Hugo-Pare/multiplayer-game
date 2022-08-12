@@ -1,46 +1,3 @@
-
-const names = [];
-
-function createName() {
-    // make sure name cannot be the same
-    const num = Math.floor(Math.random() * 10).toString() + Math.floor(Math.random() * 10).toString() + Math.floor(Math.random() * 10).toString(); 
-    if(!names.includes(num)){
-        names.push(num);
-        return 'Player' + num;
-    }
-    else{
-        createName();
-    }
-}
-
-function getKeyString(x, y){
-    return `${x}x${y}`;
-}
-
-function isSolid(x, y){
-    const blockedNextSpace = mapData.blockedSpaces[getKeyString(x, y)];
-    const blockedNextSpaceEnemy = mapData.enemyCoords[getKeyString(x, y)];
-
-    return(
-        blockedNextSpace || blockedNextSpaceEnemy || x >= mapData.maxX || x < mapData.minX || y >= mapData.maxY || y < mapData.minY
-    )
-}
-
-function spawnNewEnemy(){
-    const enemySpawns = getEnemySpawn();
-    for(let i = 0; i < enemySpawns.length; i++){
-        var x = enemySpawns[i].x;
-        var y = enemySpawns[i].y;
-        var direction = enemySpawns[i].direction;
-        enemyRef = firebase.database().ref(`enemies/${getKeyString(x, y)}`);
-        enemyRef.set({
-            x,
-            y,
-            direction
-        });
-    }
-}
-
 (function(){ 
 
     let playerId;
@@ -53,6 +10,8 @@ function spawnNewEnemy(){
 
     let bullets = {};
     let bulletElements = {};
+
+    let levelRef;
 
     const gameContainer = document.querySelector(".game-container");
 
@@ -353,6 +312,10 @@ function spawnNewEnemy(){
             const key = getKeyString(x, y);
             gameContainer.removeChild(enemyElements[key]);
             delete enemyElements[key];
+
+            if(eliminatedAllEnemies()){
+                setLevelUp()
+            }
         })
 
         spawnNewEnemy();
@@ -364,7 +327,8 @@ function spawnNewEnemy(){
             // logged in
             playerId = user.uid;
             playerRef = firebase.database().ref(`players/${playerId}`);
-            
+            levelRef = firebase.database().ref(`level`);
+
             const name = createName();
             const {x, y} = getPlayerSpawn();
 
@@ -375,6 +339,8 @@ function spawnNewEnemy(){
                 y,
                 shot: false
             })
+  
+            levelRef.set({level: 1});
 
             playerRef.onDisconnect().remove();
             initGame();
